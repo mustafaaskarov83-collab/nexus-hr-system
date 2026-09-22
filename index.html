@@ -42,7 +42,7 @@
         <button class="auth-lb" data-lang="ru">РУС</button>
         <button class="auth-lb" data-lang="tr">TÜR</button>
       </div>
-      <div class="auth-v">NEXUS v3.7</div>
+      <div class="auth-v">NEXUS v3.7.2</div>
     </div>
   </div>
 </div>
@@ -55,7 +55,6 @@
         <span><b class="bn">NEXUS ENGENEERING</b><span class="bs">|</span><span class="bsub" id="brand-sub">Кадровий облік</span></span>
       </div>
       <div class="hd-r">
-        <button class="cloud-btn" type="button" onclick="Cloud.openModal()" title="Синхронізація">☁︎</button>
         <button class="theme-btn" type="button" title="Змінити тему">🌗</button>
         <div class="langs">
           <button class="lb" data-lang="uk">УКР</button>
@@ -221,16 +220,6 @@
         <div class="m16" id="add-user-bl"><button class="btn bs" onclick="Auth.openAddUser()" id="btn-add-u">➕ Додати користувача</button></div>
       </div>
       <div class="c">
-        <div class="ch"><div class="ct">☁️ <span id="t-cloud">Хмарна синхронізація</span></div></div>
-        <div class="tsm tmu mb16" id="t-cloud-sub">Синхронізація між пристроями через Firebase Firestore</div>
-        <div class="fg">
-          <button class="btn bp" onclick="Cloud.openModal()" id="btn-cloud-open">☁️ Налаштувати синхронізацію</button>
-          <button class="btn bs" onclick="Cloud.push(false)" id="btn-cloud-push">⬆ Відправити в хмару</button>
-          <button class="btn bs" onclick="Cloud.pull(false)" id="btn-cloud-pull">⬇ Отримати з хмари</button>
-        </div>
-        <div id="cloud-settings-status" class="tsm tmu m8" style="font-size:12px"></div>
-      </div>
-      <div class="c">
         <div class="ch"><div class="ct">⚙️ <span id="t-set">Загальні налаштування</span></div></div>
         <div class="fr">
           <div class="ff ffn"><label id="l-base">Базова відпустка (к.д.)</label><input type="number" id="set-base" value="24" min="1"></div>
@@ -288,15 +277,9 @@
     <button class="md-x" onclick="Auth.closeUserModal()">×</button></div>
     <div class="md-b" id="user-mb"></div></div>
 </div>
-<div class="mo" id="cloud-modal" onclick="if(event.target===this)Cloud.closeModal()">
-  <div class="md sm"><div class="md-h"><div class="md-t" id="cloud-mt">Синхронізація</div>
-    <button class="md-x" onclick="Cloud.closeModal()">×</button></div>
-    <div class="md-b" id="cloud-mb"></div></div>
-</div>
 
 <script src="app-theme.js"></script>
 <script src="app.js"></script>
 <script src="app-calendar.js"></script>
-<script type="module" src="app-cloud.js"></script>
 </body>
 </html>
