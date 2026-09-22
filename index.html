@@ -1,11 +1,20 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="auto">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NEXUS ENGENEERING - Кадровий облік</title>
 <link rel="stylesheet" href="app.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  // Применяем тему до отрисовки, чтобы избежать мигания
+  (function(){
+    try {
+      var saved = localStorage.getItem('nexus_theme_v1') || 'auto';
+      document.documentElement.setAttribute('data-theme', saved);
+    } catch(e){}
+  })();
+</script>
 </head>
 <body>
 
@@ -34,7 +43,7 @@
         <button class="auth-lb" data-lang="ru">РУС</button>
         <button class="auth-lb" data-lang="tr">TÜR</button>
       </div>
-      <div class="auth-v">NEXUS v3.5</div>
+      <div class="auth-v">NEXUS v3.6</div>
     </div>
   </div>
 </div>
@@ -47,6 +56,7 @@
         <span><b class="bn">NEXUS ENGENEERING</b><span class="bs">|</span><span class="bsub" id="brand-sub">Кадровий облік</span></span>
       </div>
       <div class="hd-r">
+        <button class="theme-btn" type="button" title="Змінити тему">🌗</button>
         <div class="langs">
           <button class="lb" data-lang="uk">УКР</button>
           <button class="lb" data-lang="ru">РУС</button>
@@ -120,8 +130,6 @@
         <div id="emp-list"></div>
       </div>
     </section>
-
-    <!-- ═══════ CALENDAR ═══════ -->
     <section id="tp-calendar" class="tp">
       <div class="c">
         <div class="ch">
@@ -136,16 +144,15 @@
             <button class="btn bs bsm" onclick="Cal.today()" id="cal-today-btn">Сьогодні</button>
           </div>
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:12px;color:#64748b">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:12px;color:var(--text-muted)">
           <span><span style="display:inline-block;width:12px;height:12px;background:#10b981;border-radius:2px;vertical-align:middle;margin-right:4px"></span>У відпустці</span>
           <span><span style="display:inline-block;width:12px;height:12px;background:#3b82f6;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Лікарняний</span>
-          <span><span style="display:inline-block;width:12px;height:12px;background:#e2e8f0;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Вихідний</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:var(--g200);border-radius:2px;vertical-align:middle;margin-right:4px"></span>Вихідний</span>
           <span><span style="display:inline-block;width:12px;height:12px;background:#fef3c7;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Сьогодні</span>
         </div>
         <div id="cal-grid" style="overflow-x:auto"></div>
       </div>
     </section>
-
     <section id="tp-import" class="tp">
       <div class="c">
         <div class="ch"><div><div class="ct">📂 <span id="t-imp">Імпорт персоналу з Excel</span></div>
@@ -272,6 +279,7 @@
     <div class="md-b" id="user-mb"></div></div>
 </div>
 
+<script src="app-theme.js"></script>
 <script src="app.js"></script>
 <script src="app-calendar.js"></script>
 </body>

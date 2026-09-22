@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   NEXUS ENGENEERING — Модуль календаря відпусток (v3.5)
-   Залежить від: app.js (використовує tISO, fD, today, Auth)
+   NEXUS ENGENEERING — Модуль календаря відпусток (v3.6.1)
+   Стилі беруться з app.css (підтримка тёмної теми)
    ═══════════════════════════════════════════════════════════════════════ */
 
 const Cal = (() => {
@@ -9,13 +9,16 @@ const Cal = (() => {
 
   const CAL_LANG = {
     uk: { title:'Календар відпусток', sub:'Візуальна сітка на місяць', today:'Сьогодні',
-          emp:'Співробітник', noEmp:'Немає співробітників', months:['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'],
+          emp:'Співробітник', noEmp:'Немає співробітників',
+          months:['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'],
           wd:['Пн','Вт','Ср','Чт','Пт','Сб','Нд'] },
     ru: { title:'Календарь отпусков', sub:'Визуальная сетка на месяц', today:'Сегодня',
-          emp:'Сотрудник', noEmp:'Нет сотрудников', months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+          emp:'Сотрудник', noEmp:'Нет сотрудников',
+          months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
           wd:['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] },
     tr: { title:'İzin Takvimi', sub:'Aylık görsel ızgara', today:'Bugün',
-          emp:'Çalışan', noEmp:'Çalışan yok', months:['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
+          emp:'Çalışan', noEmp:'Çalışan yok',
+          months:['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
           wd:['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'] }
   };
 
@@ -33,29 +36,6 @@ const Cal = (() => {
     return { employees: [], holidays: [], useHolidays: false };
   }
 
-  function injectStyles() {
-    if (document.getElementById('cal-styles')) return;
-    const s = document.createElement('style');
-    s.id = 'cal-styles';
-    s.textContent = `
-      .cal-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-      .cal-tbl { border-collapse: collapse; font-size: 12px; width: 100%; }
-      .cal-tbl th, .cal-tbl td { border: 1px solid #e2e8f0; padding: 4px 6px; text-align: center; white-space: nowrap; }
-      .cal-tbl th { background: #f8fafc; font-weight: 600; color: #64748b; font-size: 11px; }
-      .cal-emp-h { text-align: left !important; min-width: 200px; }
-      .cal-emp { text-align: left !important; background: #f8fafc; font-weight: 500;
-        position: sticky; left: 0; z-index: 2; border-right: 2px solid #cbd5e1 !important; }
-      .cal-cell { min-width: 28px; height: 28px; font-size: 11px; }
-      .cal-vac { background: #10b981 !important; color: #fff; font-weight: 700; }
-      .cal-sick { background: #3b82f6 !important; color: #fff; font-weight: 700; }
-      .cal-hol { background: #fde68a !important; color: #78350f; }
-      .cal-wk { background: #f1f5f9; }
-      .cal-today { box-shadow: inset 0 0 0 2px #f59e0b; }
-      .cal-today-h { background: #fef3c7 !important; color: #78350f !important; }
-    `;
-    document.head.appendChild(s);
-  }
-
   function prev() { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } render(); }
   function next() { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } render(); }
   function goToday() {
@@ -69,7 +49,6 @@ const Cal = (() => {
     const grid = document.getElementById('cal-grid');
     if (!grid) return;
 
-    // Локализация элементов управления
     const t1 = document.getElementById('t-cal');
     const t2 = document.getElementById('t-cal-sub');
     const tb = document.getElementById('cal-today-btn');
@@ -86,7 +65,6 @@ const Cal = (() => {
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const todayStr = today();
 
-    // Заголовок таблицы
     let html = '<div class="cal-wrap"><table class="cal-tbl"><thead><tr>';
     html += '<th class="cal-emp-h">' + calT('emp') + '</th>';
     for (let d = 1; d <= daysInMonth; d++) {
@@ -105,14 +83,23 @@ const Cal = (() => {
     }
     html += '</tr></thead><tbody>';
 
-    // Строки сотрудников
-    const emps = (db.employees || []).slice().sort((a,b) => a.fullName.localeCompare(b.fullName));
+    // Убираем дубликаты по ФИО+hireDate
+    const seen = new Set();
+    const emps = (db.employees || [])
+      .filter(e => {
+        const key = (e.fullName || '') + '|' + (e.hireDate || '');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
+
     if (!emps.length) {
       html += '<tr><td class="cal-emp">' + calT('noEmp') + '</td>';
-      html += '<td colspan="' + daysInMonth + '" style="padding:20px;color:#64748b;font-style:italic">—</td></tr>';
+      html += '<td colspan="' + daysInMonth + '" style="padding:20px;color:var(--text-muted);font-style:italic">—</td></tr>';
     } else {
       emps.forEach(e => {
-        html += '<tr><td class="cal-emp">' + e.fullName + '</td>';
+        html += '<tr><td class="cal-emp">' + (e.fullName || '—') + '</td>';
         for (let d = 1; d <= daysInMonth; d++) {
           const date = new Date(viewYear, viewMonth, d);
           const dateStr = tISO(date);
@@ -145,21 +132,22 @@ const Cal = (() => {
     const n = new Date();
     viewYear = n.getFullYear();
     viewMonth = n.getMonth();
-    injectStyles();
 
-    // Хук на клик по вкладке «Календар»
     document.querySelectorAll('.nb').forEach(btn => {
       if (btn.dataset.tab === 'calendar') {
         btn.addEventListener('click', () => setTimeout(render, 30));
       }
     });
 
-    // Перерисовка при смене языка
     document.querySelectorAll('.lb, .auth-lb').forEach(btn => {
       btn.addEventListener('click', () => setTimeout(render, 30));
     });
 
-    // Начальный рендер (на случай, если календарь — первая вкладка)
+    // Клик по теме тоже перерисовывает (на случай, если цвета кэшировались)
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.theme-btn')) setTimeout(render, 50);
+    });
+
     render();
   }
 
