@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   NEXUS ENGENEERING HR v3.4.1 — исправлен баг с отображением платежей
+   NEXUS ENGENEERING HR v3.7.3
    ═══════════════════════════════════════════════════════════════════════ */
 
 const LANG = {
@@ -263,7 +263,7 @@ function pJ(s,f){try{return JSON.parse(s)||f}catch{return f}}
 
 /* ═══════ AUTH ═══════ */
 const Auth=(()=>{
-const UK='nexus_users_v1',SK='nexus_session_v1',TO=30*60*1000;
+const UK='nexus_users_v1',SK='nexus_session_v1',TO=12*60*60*1000;
 let users=[],currentUser=null,timer=null,mode='login';
 
 function hp(pwd,salt){
@@ -366,6 +366,13 @@ function onLogin(){
   if(window.App&&App.renderAll)App.renderAll();
   $$('.nb').forEach((b,i)=>b.classList.toggle('active',i===0));
   $$('.tp').forEach((p,i)=>p.classList.toggle('active',i===0));
+  try{
+    const redirect=sessionStorage.getItem('nexus_redirect_after_login');
+    if(redirect && redirect!=='hr.html'){
+      sessionStorage.removeItem('nexus_redirect_after_login');
+      setTimeout(()=>{location.href=redirect;},300);
+    }
+  }catch(e){}
 }
 function logout(){
   currentUser=null;csess();
@@ -483,7 +490,6 @@ return{
 };
 })();
 window.Auth=Auth;
-
 /* ═══════ APP ═══════ */
 const App=(()=>{
 const STORAGE='nexus_hr_ua_v2';
@@ -503,7 +509,7 @@ let db=loadDB(),curEmpId=null;
 function loadDB(){
   try{const r=localStorage.getItem(STORAGE);if(r){const p=pJ(r,null);if(p&&p.employees)return p}}catch{}
   return{employees:[],holidays:[...DEF_HOL],baseLeaveDays:LAW.MIN,useHolidays:false,
-    company:{name:'',edrpou:'',city:'',director:''},meta:{created:today(),version:'3.4.1'}};
+    company:{name:'',edrpou:'',city:'',director:''},meta:{created:today(),version:'3.7.3'}};
 }
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(db))}catch{alert(t('aErrSave'))}}
 
@@ -1049,7 +1055,6 @@ function printOrder(empId,leaveId){
   w.document.write(html);
   w.document.close();
 }
-
 function nH(s){return String(s||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/[''`]/g,"'")}
 function pDate(v){
   if(v==null||v==='')return'';
@@ -1479,7 +1484,7 @@ function init(){
 
   Auth.init();
   Auth.initTrack();
-  console.log('%c NEXUS v3.4.1 ','background:#1e40af;color:#fff;padding:4px 12px;border-radius:4px;font-weight:bold');
+  console.log('%c NEXUS v3.7.3 ','background:#1e40af;color:#fff;padding:4px 12px;border-radius:4px;font-weight:bold');
 }
 
 return{

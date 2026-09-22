@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   NEXUS ENGENEERING — Модуль инвентаря v1.0
+   NEXUS ENGENEERING — Модуль инвентаря v1.0.1
    ═══════════════════════════════════════════════════════════════════════ */
 
 const Inv = (() => {
@@ -40,7 +40,6 @@ const Inv = (() => {
     try { localStorage.setItem(INV_KEY, JSON.stringify(db)); } catch(e){}
   }
 
-  /* --- Авторизация --- */
   function getCurrentUser() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -58,26 +57,23 @@ const Inv = (() => {
 
   function getEmployees() {
     try {
-      const db = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
-      return (db.employees || []).slice().sort((a,b) => (a.fullName||'').localeCompare(b.fullName||''));
+      const h = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
+      return (h.employees || []).slice().sort((a,b) => (a.fullName||'').localeCompare(b.fullName||''));
     } catch(e) { return []; }
   }
 
   function initAuth() {
     const user = getCurrentUser();
-    const auth = document.getElementById('auth-ov');
-    const app = document.getElementById('app');
-
     if (!user) {
-      auth.classList.remove('hidden');
-      app.classList.remove('vis');
+      try { sessionStorage.setItem('nexus_redirect_after_login', 'inventory.html'); } catch(e){}
+      location.href = 'hr.html';
       return false;
     }
+    const auth = document.getElementById('auth-ov');
+    const app = document.getElementById('app');
+    if (auth) auth.classList.add('hidden');
+    if (app) app.classList.add('vis');
 
-    auth.classList.add('hidden');
-    app.classList.add('vis');
-
-    // Кнопка юзера в шапке
     const av = document.getElementById('av');
     const hun = document.getElementById('hun');
     const hur = document.getElementById('hur');
@@ -95,7 +91,6 @@ const Inv = (() => {
     location.href = 'index.html';
   }
 
-  /* --- Тема --- */
   function initTheme() {
     let current = localStorage.getItem(THEME_KEY) || 'auto';
     document.documentElement.setAttribute('data-theme', current);
@@ -116,7 +111,6 @@ const Inv = (() => {
     updateIcon();
   }
 
-  /* --- Заполнить select сотрудников --- */
   function fillEmployeeSelect() {
     const sel = document.getElementById('f-emp');
     if (!sel) return;
@@ -127,7 +121,6 @@ const Inv = (() => {
     if (current) sel.value = current;
   }
 
-  /* --- Форма --- */
   function toggleForm() {
     const body = document.getElementById('form-body');
     const btn = document.getElementById('form-toggle');
@@ -221,7 +214,6 @@ const Inv = (() => {
     render();
   }
 
-  /* --- Рендер списка --- */
   function render() {
     renderStats();
     renderTable();
@@ -306,7 +298,6 @@ const Inv = (() => {
 
   function filter() { renderTable(); }
 
-  /* --- Детали --- */
   function openDetail(id) {
     const it = db.items.find(x => x.id === id);
     if (!it) return;
@@ -399,7 +390,6 @@ const Inv = (() => {
     w.document.close();
   }
 
-  /* --- Экспорт / Импорт --- */
   function exportExcel() {
     if (!db.items.length) { alert('Немає даних'); return; }
     const emps = getEmployees();
@@ -468,15 +458,11 @@ const Inv = (() => {
     alert('🗑️ Інвентар очищено');
   }
 
-  /* --- Инициализация --- */
   function init() {
     if (!initAuth()) return;
-
     initTheme();
     fillEmployeeSelect();
     render();
-
-    // Обновление списка сотрудников каждые 15 секунд
     setInterval(fillEmployeeSelect, 15000);
   }
 

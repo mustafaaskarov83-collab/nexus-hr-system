@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   NEXUS ENGENEERING — Дашборд KPI v1.0
+   NEXUS ENGENEERING — Дашборд KPI v1.0.1
    Аналитика по всем модулям с графиками Chart.js
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -39,7 +39,6 @@ const Dash = (() => {
   let currentRange = 'quarter';
   let charts = {};
 
-  /* ---------- УТИЛИТЫ ---------- */
   const pad = n => String(n).padStart(2, '0');
   const fmtMoney = n => new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 }).format(Math.round(n || 0)) + ' ₴';
   const fmtNum = n => new Intl.NumberFormat('uk-UA').format(n || 0);
@@ -55,7 +54,6 @@ const Dash = (() => {
     };
   }
 
-  /* ---------- АВТОРИЗАЦИЯ ---------- */
   function getCurrentUser() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -74,12 +72,14 @@ const Dash = (() => {
   function initAuth() {
     const user = getCurrentUser();
     if (!user) {
-      document.getElementById('auth-ov').classList.remove('hidden');
-      document.getElementById('app').classList.remove('vis');
+      try { sessionStorage.setItem('nexus_redirect_after_login', 'dashboard.html'); } catch(e){}
+      location.href = 'hr.html';
       return false;
     }
-    document.getElementById('auth-ov').classList.add('hidden');
-    document.getElementById('app').classList.add('vis');
+    const auth = document.getElementById('auth-ov');
+    const app = document.getElementById('app');
+    if (auth) auth.classList.add('hidden');
+    if (app) app.classList.add('vis');
 
     const initials = (user.fullName || user.username).split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase();
     const roleMap = { admin: 'Адміністратор', manager: 'Менеджер', viewer: 'Перегляд' };
@@ -94,7 +94,6 @@ const Dash = (() => {
     location.href = 'index.html';
   }
 
-  /* ---------- ТЕМА ---------- */
   function initTheme() {
     let current = localStorage.getItem(THEME_KEY) || 'auto';
     document.documentElement.setAttribute('data-theme', current);
@@ -110,14 +109,12 @@ const Dash = (() => {
         document.documentElement.setAttribute('data-theme', current);
         localStorage.setItem(THEME_KEY, current);
         updateIcon();
-        // Перерисовка графиков под тему
         setTimeout(() => { destroyCharts(); renderCharts(); }, 100);
       });
     });
     updateIcon();
   }
 
-  /* ---------- ДАННЫЕ ---------- */
   function loadHR() {
     try {
       const r = localStorage.getItem(HR_KEY);
@@ -134,7 +131,6 @@ const Dash = (() => {
     return { items: [] };
   }
 
-  /* Диапазон дат */
   function getRangeStart() {
     const now = new Date();
     if (currentRange === 'all') return null;
@@ -144,13 +140,11 @@ const Dash = (() => {
     return null;
   }
 
-  /* Список месяцев диапазона */
   function getMonthsList() {
     const months = [];
     const now = new Date();
     const start = getRangeStart();
     if (!start) {
-      // За последние 12 месяцев
       for (let i = 11; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         months.push({ y: d.getFullYear(), m: d.getMonth() + 1 });
@@ -165,7 +159,6 @@ const Dash = (() => {
     return months;
   }
 
-  /* ---------- KPI КАРТОЧКИ ---------- */
   function renderKPIs() {
     const hr = loadHR();
     const inv = loadInv();
@@ -173,10 +166,8 @@ const Dash = (() => {
     const items = inv.items || [];
     const today = new Date().toISOString().slice(0, 10);
 
-    // Сотрудники
     document.getElementById('kpi-emp').textContent = fmtNum(emps.length);
 
-    // ФОТ — берём выплаты за последний доступный месяц (или средний за 3 месяца)
     const months = getMonthsList();
     let payrollSum = 0, payrollCount = 0;
     const lastMonths = months.slice(-3);
@@ -191,29 +182,24 @@ const Dash = (() => {
     const payroll = payrollCount > 0 ? payrollSum / payrollCount : 0;
     document.getElementById('kpi-payroll').textContent = fmtMoney(payroll);
 
-    // У отпуске
     let vac = 0;
     emps.forEach(e => (e.leaves || []).forEach(l => {
       if (l.start <= today && l.end >= today) vac++;
     }));
     document.getElementById('kpi-vac').textContent = fmtNum(vac);
 
-    // Инвентарь
     document.getElementById('kpi-inv').textContent = fmtNum(items.length);
 
-    // На больничном
     let sick = 0;
     emps.forEach(e => (e.sickLeaves || []).forEach(s => {
       if (s.start <= today && s.end >= today) sick++;
     }));
     document.getElementById('kpi-sick').textContent = fmtNum(sick);
 
-    // Стоимость инвентаря
     const cost = items.reduce((s, it) => s + (Number(it.cost) || 0), 0);
     document.getElementById('kpi-cost').textContent = fmtMoney(cost);
   }
 
-  /* ---------- ГРАФИКИ ---------- */
   function destroyCharts() {
     Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
     charts = {};
@@ -230,7 +216,6 @@ const Dash = (() => {
     Chart.defaults.font.size = 12;
     Chart.defaults.color = colors.text;
 
-    /* 1. Співробітники за категоріями — doughnut */
     const catCounts = {};
     emps.forEach(e => { catCounts[e.category || 'standard'] = (catCounts[e.category || 'standard'] || 0) + 1; });
     const catKeys = Object.keys(catCounts);
@@ -260,7 +245,6 @@ const Dash = (() => {
       });
     }
 
-    /* 2. ФОТ за місяцями — bar */
     const months = getMonthsList();
     const monthLabels = months.map(m => {
       const names = ['Січ','Лют','Бер','Кві','Тра','Чер','Лип','Сер','Вер','Жов','Лис','Гру'];
@@ -307,15 +291,12 @@ const Dash = (() => {
       });
     }
 
-    /* 3. Дни отпусков за месяцами — bar */
     const vacData = months.map(m => {
       let days = 0;
       const first = `${m.y}-${pad(m.m)}-01`;
       const last = `${m.y}-${pad(m.m)}-31`;
       emps.forEach(e => (e.leaves || []).forEach(l => {
-        // Проверяем пересечение периода отпуска с месяцем
         if (l.start <= last && l.end >= first) {
-          // Считаем приблизительно — дни в этом месяце
           const s = l.start > first ? l.start : first;
           const e_ = l.end < last ? l.end : last;
           const d1 = new Date(s + 'T00:00:00');
@@ -352,7 +333,6 @@ const Dash = (() => {
       });
     }
 
-    /* 4. Дни больничных — line */
     const sickData = months.map(m => {
       let days = 0;
       const first = `${m.y}-${pad(m.m)}-01`;
@@ -398,7 +378,6 @@ const Dash = (() => {
       });
     }
 
-    /* 5. Инвентарь за категориями — pie */
     const invCatCounts = {};
     items.forEach(it => { invCatCounts[it.category || 'other'] = (invCatCounts[it.category || 'other'] || 0) + 1; });
     const invCatKeys = Object.keys(invCatCounts);
@@ -427,7 +406,6 @@ const Dash = (() => {
       });
     }
 
-    /* 6. Инвентарь за статусом — doughnut */
     const invStatusCounts = {};
     items.forEach(it => { invStatusCounts[it.status || 'active'] = (invStatusCounts[it.status || 'active'] || 0) + 1; });
     const invStKeys = Object.keys(invStatusCounts);
@@ -457,7 +435,6 @@ const Dash = (() => {
       });
     }
 
-    // Период для подписи
     const period = document.getElementById('payroll-period');
     if (period && months.length) {
       const names = ['січень','лютий','березень','квітень','травень','червень','липень','серпень','вересень','жовтень','листопад','грудень'];
@@ -465,7 +442,6 @@ const Dash = (() => {
     }
   }
 
-  /* ---------- ТОП СОТРУДНИКОВ ---------- */
   function renderTop() {
     const hr = loadHR();
     const emps = hr.employees || [];
@@ -496,7 +472,6 @@ const Dash = (() => {
     `).join('') + '</div>';
   }
 
-  /* ---------- КАЧЕСТВО ДАННЫХ ---------- */
   function renderQuality() {
     const hr = loadHR();
     const inv = loadInv();
@@ -535,7 +510,6 @@ const Dash = (() => {
     }).join('');
   }
 
-  /* ---------- УВЕДОМЛЕНИЯ ---------- */
   function renderAlerts() {
     const hr = loadHR();
     const inv = loadInv();
@@ -544,32 +518,21 @@ const Dash = (() => {
     const today = new Date().toISOString().slice(0, 10);
     const alerts = [];
 
-    // Сотрудники с большим остатком отпуска
-    emps.forEach(e => {
-      const earn = (e.leaves || []).filter(l => l.type === 'annual').reduce((s, l) => s + (Number(l.days) || 0), 0);
-      // Приблизительный расчёт заработанного отпуска
-      if (earn > 0) { /* пропускаем сложный расчёт */ }
-    });
-
-    // Сотрудники без выплат
     const noPay = emps.filter(e => !(e.payments || []).length);
     if (noPay.length > 0) {
       alerts.push({ type: 'warn', icon: '💰', text: `${noPay.length} співробітник(ів) без внесених виплат` });
     }
 
-    // Инвентарь без ответственного
     const noOwner = items.filter(it => !it.employeeId && it.status === 'active');
     if (noOwner.length > 0) {
       alerts.push({ type: 'warn', icon: '📦', text: `${noOwner.length} одиниць інвентарю в експлуатації без закріплення` });
     }
 
-    // Инвентарь на ремонте
     const onRepair = items.filter(it => it.status === 'repair');
     if (onRepair.length > 0) {
       alerts.push({ type: 'info', icon: '🔧', text: `${onRepair.length} одиниць інвентарю на ремонті` });
     }
 
-    // Больничные сейчас
     let onSick = 0;
     emps.forEach(e => (e.sickLeaves || []).forEach(s => {
       if (s.start <= today && s.end >= today) onSick++;
@@ -578,7 +541,6 @@ const Dash = (() => {
       alerts.push({ type: 'info', icon: '🏥', text: `${onSick} співробітник(ів) зараз на лікарняному` });
     }
 
-    // Отпуска сейчас
     let onVac = 0;
     emps.forEach(e => (e.leaves || []).forEach(l => {
       if (l.start <= today && l.end >= today) onVac++;
@@ -587,7 +549,6 @@ const Dash = (() => {
       alerts.push({ type: 'info', icon: '🌴', text: `${onVac} співробітник(ів) зараз у відпустці` });
     }
 
-    // Инвентарь без вартості
     const noCost = items.filter(it => !it.cost || Number(it.cost) === 0);
     if (noCost.length > 0) {
       alerts.push({ type: 'warn', icon: '💸', text: `${noCost.length} одиниць інвентарю без вказаної вартості` });
@@ -607,7 +568,6 @@ const Dash = (() => {
     `).join('');
   }
 
-  /* ---------- СВОДКА ---------- */
   function renderSummary() {
     const hr = loadHR();
     const inv = loadInv();
@@ -620,7 +580,6 @@ const Dash = (() => {
       dateEl.textContent = now.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
     }
 
-    // Средний стаж
     let totalYears = 0, countWithHire = 0;
     emps.forEach(e => {
       if (e.hireDate) {
@@ -631,12 +590,10 @@ const Dash = (() => {
     });
     const avgStazh = countWithHire ? (totalYears / countWithHire).toFixed(1) : '0';
 
-    // Средняя выплата
     let totalPay = 0, payCount = 0;
     emps.forEach(e => (e.payments || []).forEach(p => { totalPay += Number(p.amount) || 0; payCount++; }));
     const avgPay = payCount ? totalPay / payCount : 0;
 
-    // Средняя стоимость инвентаря
     const avgInvCost = items.length
       ? items.reduce((s, it) => s + (Number(it.cost) || 0), 0) / items.length
       : 0;
@@ -658,7 +615,6 @@ const Dash = (() => {
     `).join('');
   }
 
-  /* ---------- RANGE ---------- */
   function setRange(r) {
     currentRange = r;
     document.querySelectorAll('.range-btn').forEach(b => {
@@ -667,7 +623,6 @@ const Dash = (() => {
     render();
   }
 
-  /* ---------- RENDER ---------- */
   function render() {
     renderKPIs();
     destroyCharts();
@@ -678,13 +633,11 @@ const Dash = (() => {
     renderSummary();
   }
 
-  /* ---------- INIT ---------- */
   function init() {
     if (!initAuth()) return;
     initTheme();
     render();
 
-    // Перерисовка при смене темы системы
     if (window.matchMedia) {
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
       mq.addEventListener('change', () => {

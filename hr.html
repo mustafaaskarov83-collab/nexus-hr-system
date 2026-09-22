@@ -11,6 +11,8 @@
     try {
       var saved = localStorage.getItem('nexus_theme_v1') || 'auto';
       document.documentElement.setAttribute('data-theme', saved);
+      // Примусово українська мова
+      localStorage.setItem('nexus_lang_v1', 'uk');
     } catch(e){}
   })();
 </script>
@@ -37,12 +39,7 @@
       <button type="submit" class="btn bp auth-sub"><span id="auth-btn-t">Увійти</span></button>
     </form>
     <div class="auth-foot">
-      <div class="auth-langs">
-        <button class="auth-lb" data-lang="uk">УКР</button>
-        <button class="auth-lb" data-lang="ru">РУС</button>
-        <button class="auth-lb" data-lang="tr">TÜR</button>
-      </div>
-      <div class="auth-v">NEXUS v3.7.2</div>
+      <div class="auth-v" style="text-align:center;width:100%">NEXUS v3.7.3</div>
     </div>
   </div>
 </div>
@@ -58,11 +55,6 @@
       </div>
       <div class="hd-r">
         <button class="theme-btn" type="button" title="Змінити тему">🌗</button>
-        <div class="langs">
-          <button class="lb" data-lang="uk">УКР</button>
-          <button class="lb" data-lang="ru">РУС</button>
-          <button class="lb" data-lang="tr">TÜR</button>
-        </div>
         <button class="hd-u" onclick="Auth.toggleMenu(event)">
           <div class="hd-av" id="av">?</div>
           <div class="hd-ui"><div class="hd-un" id="hun">—</div><div class="hd-ur" id="hur">—</div></div>
