@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   NEXUS ENGENEERING — Модуль синхронизации (v3.7)
+   NEXUS ENGENEERING — Модуль синхронизации (v3.7.1)
    Firebase Firestore, авто-синхронизация, несколько устройств
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -20,6 +20,15 @@ const WS_KEY = 'nexus_cloud_workspace';
 const EN_KEY = 'nexus_cloud_enabled';
 const SYNC_KEY = 'nexus_cloud_last_sync';
 const DEV_KEY = 'nexus_device_name';
+
+const DEFAULT_DB = {
+  employees: [],
+  holidays: ['01-01','03-08','05-01','05-09','06-28','07-15','08-24','10-01','12-25'],
+  baseLeaveDays: 24,
+  useHolidays: false,
+  company: { name: '', edrpou: '', city: '', director: '' },
+  meta: { created: '', version: '3.7' }
+};
 
 let fbApp = null, fbDb = null;
 let lastHash = '';
@@ -50,11 +59,29 @@ const Cloud = (() => {
   }
 
   function getLocalDB() {
-    try { const r = localStorage.getItem(DB_KEY); return r ? JSON.parse(r) : null; }
-    catch(e) { return null; }
+    try {
+      const r = localStorage.getItem(DB_KEY);
+      if (!r) return null;
+      const parsed = JSON.parse(r);
+      if (!parsed || !parsed.employees) return null;
+      return parsed;
+    } catch(e) {
+      return null;
+    }
   }
+
   function setLocalDB(d) {
     try { localStorage.setItem(DB_KEY, JSON.stringify(d)); } catch(e){}
+  }
+
+  function ensureDB() {
+    let local = getLocalDB();
+    if (!local) {
+      local = JSON.parse(JSON.stringify(DEFAULT_DB));
+      local.meta.created = new Date().toISOString().slice(0, 10);
+      setLocalDB(local);
+    }
+    return local;
   }
 
   function ensureInit() {
@@ -85,11 +112,17 @@ const Cloud = (() => {
   }
 
   async function push(silent) {
-    if (!ensureInit()) { if (!silent) alert('Firebase не ініціалізовано'); return false; }
+    if (!ensureInit()) {
+      if (!silent) alert('Firebase не ініціалізовано');
+      return false;
+    }
     const ref = getDocRef();
-    if (!ref) { if (!silent) alert('Спочатку вкажіть код простору'); return false; }
-    const local = getLocalDB();
-    if (!local) { if (!silent) alert('Немає локальних даних'); return false; }
+    if (!ref) {
+      if (!silent) alert('Спочатку вкажіть код простору');
+      return false;
+    }
+
+    const local = ensureDB();
 
     try {
       await setDoc(ref, {
@@ -101,9 +134,10 @@ const Cloud = (() => {
       lastHash = hash(JSON.stringify(local));
       updateUI();
       if (!silent) {
-        console.log('✅ Pushed to cloud');
+        alert('✅ Дані відправлено в хмару');
         refreshStatus();
       }
+      console.log('✅ Pushed to cloud · workspace:', getWorkspaceId());
       return true;
     } catch(e) {
       console.error('Push error:', e);
@@ -113,9 +147,15 @@ const Cloud = (() => {
   }
 
   async function pull(silent) {
-    if (!ensureInit()) { if (!silent) alert('Firebase не ініціалізовано'); return false; }
+    if (!ensureInit()) {
+      if (!silent) alert('Firebase не ініціалізовано');
+      return false;
+    }
     const ref = getDocRef();
-    if (!ref) { if (!silent) alert('Спочатку вкажіть код простору'); return false; }
+    if (!ref) {
+      if (!silent) alert('Спочатку вкажіть код простору');
+      return false;
+    }
 
     try {
       const snap = await getDoc(ref);
@@ -147,6 +187,7 @@ const Cloud = (() => {
         alert('✅ Дані завантажено з хмари');
         refreshStatus();
       }
+      console.log('✅ Pulled from cloud · workspace:', getWorkspaceId());
       return true;
     } catch(e) {
       console.error('Pull error:', e);
@@ -169,9 +210,13 @@ const Cloud = (() => {
   }
 
   function enable(wsId) {
-    if (!wsId || wsId.length < 4) { alert('Код простору мінімум 4 символи'); return false; }
+    if (!wsId || wsId.length < 4) {
+      alert('Код простору мінімум 4 символи');
+      return false;
+    }
     localStorage.setItem(WS_KEY, wsId);
     localStorage.setItem(EN_KEY, '1');
+    ensureDB();
     lastHash = '';
     startWatch();
     updateUI();
@@ -211,6 +256,7 @@ const Cloud = (() => {
 
   function openModal() {
     ensureInit();
+    ensureDB();
     const m = document.getElementById('cloud-modal');
     if (!m) return;
     const enabled = isEnabled();
@@ -276,6 +322,7 @@ const Cloud = (() => {
 
   async function start() {
     ensureInit();
+    ensureDB();
     if (isEnabled()) {
       await pull(true);
       lastHash = hash(JSON.stringify(getLocalDB() || {}));
